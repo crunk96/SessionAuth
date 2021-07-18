@@ -65,7 +65,7 @@ const redirectHome = (req, res, next) => {
 }
 
 app.get('/', (req, res) => {
-  const userId = userId
+  const { userId } = req.session
   res.send(`
   <h1>Welcome!</h1>
   ${
@@ -85,12 +85,13 @@ app.get('/', (req, res) => {
 })
 
 app.get('/home', redirectLogin, (req, res) => {
+  const user = users.find((user) => user.id === req.session.userId)
   res.send(`
   <h1>Home</h1>
   <a href='/'>Main</a>
   <ul>
-    <li>Name: </li>
-    <li>Email: </li>
+    <li>Name: ${user.name}</li>
+    <li>Email: ${user.email}</li>
   </ul>
   `)
 })
@@ -118,9 +119,25 @@ app.get('/register', redirectHome, (req, res) => {
   `)
 })
 
-app.post('/login', (req, res) => {})
+app.post('/login', (req, res) => {
+  const { email, password } = req.body
+
+  if (email && password) {
+    const user = users.find(
+      (user) => user.email === email && user.password === password,
+    )
+    if (user) {
+      req.session.userId = user.id
+      return res.redirect('/home')
+    } else {
+      res.redirect('/login')
+    }
+  }
+})
 
 app.post('/register', redirectHome, (req, res) => {})
 
-app.post('/home', redirectLogin, (req, res) => {})
-app.post('/logout', redirectLogin, (req, res) => {})
+app.post('/logout', redirectLogin, (req, res) => {
+  req.session.destroy()
+  res.redirect('login')
+})
